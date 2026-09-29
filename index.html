@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ruang Belajar</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f7fb;
+  color: #172033;
+  transition: .25s;
+}
+
+body.dark {
+  background: #111827;
+  color: #f3f4f6;
+}
+
+header {
+  background: linear-gradient(135deg,#2563eb,#7c3aed);
+  color: white;
+  padding: 28px 18px;
+}
+
+header h1 {
+  font-size: 30px;
+}
+
+header p {
+  margin-top: 7px;
+  opacity: .9;
+}
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 20px;
+}
+
+.topbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+button,
+select,
+input {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+input,
+select {
+  background: white;
+  border: 1px solid #dbe1ea;
+  color: #172033;
+}
+
+button {
+  cursor: pointer;
+  background: #2563eb;
+  color: white;
+}
+
+button:hover {
+  opacity: .9;
+}
+
+.search {
+  flex: 1;
+  min-width: 220px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.tabs button {
+  background: #e5e7eb;
+  color: #172033;
+}
+
+.tabs button.active {
+  background: #2563eb;
+  color: white;
+}
+
+.dark .tabs button {
+  background: #374151;
+  color: white;
+}
+
+.subject-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(210px,1fr));
+  gap: 15px;
+}
+
+.subject {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 5px 20px #0000000d;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.subject:hover {
+  transform: translateY(-3px);
+}
+
+.dark .subject,
+.dark .material-card,
+.dark .modal-box {
+  background: #1f2937;
+  color: white;
+}
+
+.subject h3 {
+  margin-bottom: 8px;
+}
+
+.subject p {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.dark .subject p {
+  color: #cbd5e1;
+}
+
+.material-list {
+  margin-top: 25px;
+  display: grid;
+  gap: 12px;
+}
+
+.material-card {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 15px #0000000a;
+}
+
+.material-card h3 {
+  margin-bottom: 7px;
+}
+
+.material-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.btn-green {
+  background: #16a34a;
+}
+
+.btn-orange {
+  background: #ea580c;
+}
+
+.btn-purple {
+  background: #7c3aed;
+}
+
+.btn-gray {
+  background: #64748b;
+}
+
+.progress-box {
+  background: white;
+  border-radius: 15px;
+  padding: 18px;
+  margin: 20px 0;
+}
+
+.dark .progress-box {
+  background: #1f2937;
+}
+
+.progress-bar {
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: #2563eb;
+  transition: .3s;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: #0008;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  z-index: 20;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-box {
+  background: white;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 18px;
+  padding: 25px;
+}
+
+.modal-box h2 {
+  margin-bottom: 15px;
+}
+
+.close {
+  float: right;
+  background: #ef4444;
+}
+
+.quiz-question {
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.dark .quiz-question {
+  background: #374151;
+}
+
+.quiz-question label {
+  display: block;
+  padding: 7px;
+}
+
+.empty {
+  text-align: center;
+  padding: 35px;
+  color: #64748b;
+}
+
+footer {
+  text-align: center;
+  padding: 30px;
+  color: #64748b;
+}
+
+@media(max-width:600px) {
+  header h1 {
+    font-size: 24px;
+  }
+
+  .container {
+    padding: 14px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <h1>📚 Ruang Belajar</h1>
+    <p>Belajar Kelas 10, 11, dan 12 dalam satu website.</p>
+  </div>
+</header>
+
+<main class="container">
+
+  <div class="topbar">
+    <input
+      id="searchInput"
+      class="search"
+      placeholder="🔎 Cari materi, bab, atau mata pelajaran..."
+      oninput="render()"
+    >
+
+    <button onclick="toggleDark()">🌙 Mode</button>
+    <button onclick="openBookmarks()">⭐ Tersimpan</button>
+  </div>
+
+  <div class="tabs">
+    <button class="active" onclick="setClass('10',this)">Kelas 10</button>
+    <button onclick="setClass('11',this)">Kelas 11</button>
+    <button onclick="setClass('12',this)">Kelas 12</button>
+  </div>
+
+  <div class="progress-box">
+    <b>📊 Progress Belajar</b>
+    <p id="progressText">0 materi selesai</p>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div id="subjects" class="subject-grid"></div>
+
+  <div id="materials" class="material-list"></div>
+
+</main>
+
+<footer>
+  © 2026 Ruang Belajar
+</footer>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <button class="close" onclick="closeModal()">✕</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://xchxamzaacedpozgvvyg.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_BojvjcIt2HPCNpeo8huhvA_jTLLl3bn";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+let currentClass = "10";
+let materials = [];
+
+const subjects = {
+  10: [
+  "Matematika",
+  "Geografi",
+  "Kimia",
+  "Biologi",
+  "Fisika",
+  "Bahasa Indonesia",
+  "Bahasa Inggris",
+  "Informatika",
+  "Ekonomi",
+  "Sosiologi",
+  "Sejarah"
+],
+  11: [
+    "Matematika",
+    "Geografi",
+    "Kimia",
+    "Biologi",
+    "Fisika",
+    "Bahasa Indonesia",
+    "Bahasa Inggris",
+    "Informatika"
+  ],
+  12: [
+    "Matematika",
+    "Geografi",
+    "Kimia",
+    "Biologi",
+    "Fisika",
+    "Bahasa Indonesia",
+    "Bahasa Inggris",
+    "Informatika"
+  ]
+};
+
+const quizzes = {
+  "Geografi": [
+    {
+      q: "Apa yang dimaksud dengan peta?",
+      options: [
+        "Gambaran permukaan bumi pada bidang datar",
+        "Foto udara saja",
+        "Daftar nama wilayah",
+        "Gambar bebas",
+        "Tabel penduduk"
+      ],
+      answer: 0
+    },
+    {
+      q: "Bagian peta yang menjelaskan arti simbol disebut...",
+      options: [
+        "Skala",
+        "Legenda",
+        "Inset",
+        "Orientasi",
+        "Judul"
+      ],
+      answer: 1
+    }
+  ],
+
+  "Matematika": [
+    {
+      q: "Hasil dari 2³ adalah...",
+      options: ["4","6","8","9","12"],
+      answer: 2
+    }
+  ],
+
+  "Biologi": [
+    {
+      q: "Unit terkecil penyusun makhluk hidup adalah...",
+      options: [
+        "Jaringan",
+        "Organ",
+        "Sel",
+        "Sistem organ",
+        "Molekul"
+      ],
+      answer: 2
+    }
+  ],
+
+  "Fisika": [
+    {
+      q: "Satuan SI untuk panjang adalah...",
+      options: [
+        "Kilogram",
+        "Meter",
+        "Sekon",
+        "Ampere",
+        "Kelvin"
+      ],
+      answer: 1
+    }
+  ]
+};
+
+async function loadMaterials() {
+  const { data, error } = await supabaseClient
+    .from("materials")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    materials = [];
+  } else {
+    materials = data || [];
+  }
+
+  render();
+}
+
+function setClass(level, button) {
+  currentClass = level;
+
+  document.querySelectorAll(".tabs button")
+    .forEach(b => b.classList.remove("active"));
+
+  button.classList.add("active");
+
+  render();
+}
+
+function render() {
+  renderSubjects();
+  renderMaterials();
+  updateProgress();
+}
+
+function renderSubjects() {
+  const container = document.getElementById("subjects");
+
+  container.innerHTML = subjects[currentClass]
+    .map(subject => `
+      <div class="subject"
+        onclick="filterSubject('${escapeHtml(subject)}')">
+        <h3>📘 ${escapeHtml(subject)}</h3>
+        <p>
+          ${materials.filter(m =>
+            m.class_level === currentClass &&
+            m.subject === subject
+          ).length} materi tersedia
+        </p>
+      </div>
+    `)
+    .join("");
+}
+
+function renderMaterials() {
+  const container = document.getElementById("materials");
+  const search = document
+    .getElementById("searchInput")
+    .value
+    .toLowerCase();
+
+  const result = materials.filter(m => {
+    const sameClass = m.class_level === currentClass;
+
+    const matchSearch =
+      !search ||
+      m.title.toLowerCase().includes(search) ||
+      m.subject.toLowerCase().includes(search) ||
+      m.chapter.toLowerCase().includes(search);
+
+    return sameClass && matchSearch;
+  });
+
+  if (!result.length) {
+    container.innerHTML = `
+      <div class="empty">
+        📚 Belum ada materi yang sesuai.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = result.map(m => `
+    <div class="material-card">
+      <h3>📄 ${escapeHtml(m.title)}</h3>
+
+      <p>
+        <b>${escapeHtml(m.subject)}</b>
+        • ${escapeHtml(m.chapter)}
+      </p>
+
+      <p style="margin-top:8px">
+        ${escapeHtml(m.description || "")}
+      </p>
+
+      <div class="material-actions">
+        <button
+          class="btn-green"
+          onclick="openMaterial('${m.file_url}','${m.id}')">
+          📖 Buka
+        </button>
+
+        <button
+          class="btn-purple"
+          onclick="toggleBookmark('${m.id}')">
+          ⭐ Simpan
+        </button>
+
+        <button
+          class="btn-orange"
+          onclick="openQuiz('${escapeHtml(m.subject)}')">
+          📝 Latihan
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function filterSubject(subject) {
+  document.getElementById("searchInput").value = subject;
+  render();
+}
+
+function openMaterial(url, id) {
+  if (url) {
+    window.open(url, "_blank");
+    markComplete(id);
+  } else {
+    alert("File materi belum tersedia.");
+  }
+}
+
+function markComplete(id) {
+  let completed = JSON.parse(
+    localStorage.getItem("completedMaterials") || "[]"
+  );
+
+  if (!completed.includes(String(id))) {
+    completed.push(String(id));
+    localStorage.setItem(
+      "completedMaterials",
+      JSON.stringify(completed)
+    );
+  }
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const completed = JSON.parse(
+    localStorage.getItem("completedMaterials") || "[]"
+  );
+
+  const total = materials.filter(
+    m => m.class_level === currentClass
+  ).length;
+
+  const count = materials.filter(
+    m =>
+      m.class_level === currentClass &&
+      completed.includes(String(m.id))
+  ).length;
+
+  document.getElementById("progressText").textContent =
+    `${count} dari ${total} materi selesai`;
+
+  const percentage =
+    total ? Math.round((count / total) * 100) : 0;
+
+  document.getElementById("progressFill").style.width =
+    percentage + "%";
+}
+
+function toggleBookmark(id) {
+  let bookmarks = JSON.parse(
+    localStorage.getItem("bookmarks") || "[]"
+  );
+
+  id = String(id);
+
+  if (bookmarks.includes(id)) {
+    bookmarks = bookmarks.filter(x => x !== id);
+    alert("Materi dihapus dari tersimpan.");
+  } else {
+    bookmarks.push(id);
+    alert("Materi disimpan ⭐");
+  }
+
+  localStorage.setItem(
+    "bookmarks",
+    JSON.stringify(bookmarks)
+  );
+}
+
+function openBookmarks() {
+  const bookmarks = JSON.parse(
+    localStorage.getItem("bookmarks") || "[]"
+  );
+
+  const saved = materials.filter(
+    m => bookmarks.includes(String(m.id))
+  );
+
+  document.getElementById("modalContent").innerHTML = `
+    <h2>⭐ Materi Tersimpan</h2>
+
+    ${
+      saved.length
+      ? saved.map(m => `
+        <div class="material-card" style="margin-top:12px">
+          <h3>${escapeHtml(m.title)}</h3>
+          <p>${escapeHtml(m.subject)} • ${escapeHtml(m.chapter)}</p>
+
+          <button
+            style="margin-top:10px"
+            onclick="openMaterial('${m.file_url}','${m.id}')">
+            📖 Buka
+          </button>
+        </div>
+      `).join("")
+      : "<p>Belum ada materi yang disimpan.</p>"
+    }
+  `;
+
+  document.getElementById("modal").classList.add("show");
+}
+
+function openQuiz(subject) {
+  const questions = quizzes[subject];
+
+  if (!questions || !questions.length) {
+    alert("Latihan untuk mata pelajaran ini belum tersedia.");
+    return;
+  }
+
+  document.getElementById("modalContent").innerHTML = `
+    <h2>📝 Latihan ${escapeHtml(subject)}</h2>
+
+    <form id="quizForm">
+      ${questions.map((q, i) => `
+        <div class="quiz-question">
+          <b>${i + 1}. ${escapeHtml(q.q)}</b>
+
+          ${q.options.map((option, j) => `
+            <label>
+              <input
+                type="radio"
+                name="q${i}"
+                value="${j}">
+              ${escapeHtml(option)}
+            </label>
+          `).join("")}
+        </div>
+      `).join("")}
+
+      <button type="button" onclick="checkQuiz('${escapeHtml(subject)}')">
+        Cek Jawaban
+      </button>
+    </form>
+
+    <div id="quizResult" style="margin-top:15px"></div>
+  `;
+
+  document.getElementById("modal").classList.add("show");
+}
+
+function checkQuiz(subject) {
+  const questions = quizzes[subject];
+  let score = 0;
+
+  questions.forEach((q, i) => {
+    const selected = document.querySelector(
+      `input[name="q${i}"]:checked`
+    );
+
+    if (selected && Number(selected.value) === q.answer) {
+      score++;
+    }
+  });
+
+  const nilai = Math.round(
+    (score / questions.length) * 100
+  );
+
+  document.getElementById("quizResult").innerHTML = `
+    <div class="progress-box">
+      <h3>🎯 Nilai: ${nilai}</h3>
+      <p>Benar ${score} dari ${questions.length} soal.</p>
+    </div>
+  `;
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.remove("show");
+}
+
+function toggleDark() {
+  document.body.classList.toggle("dark");
+
+  localStorage.setItem(
+    "darkMode",
+    document.body.classList.contains("dark")
+  );
+}
+
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+if (localStorage.getItem("darkMode") === "true") {
+  document.body.classList.add("dark");
+}
+
+loadMaterials();
+</script>
+
+</body>
+</html>

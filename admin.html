@@ -1,0 +1,709 @@
+<html lang="id">
+<!DOCTYPE html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Admin - Ruang Belajar</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f1f5f9;
+  color: #172033;
+}
+
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+
+header {
+  background: linear-gradient(135deg,#2563eb,#7c3aed);
+  color: white;
+  padding: 25px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 5px 20px #0000000d;
+}
+
+h1 {
+  margin: 0;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  margin-top: 7px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+textarea {
+  min-height: 100px;
+}
+
+button {
+  border: 0;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: .9;
+}
+
+.danger {
+  background: #dc2626;
+}
+
+.orange {
+  background: #ea580c;
+}
+
+.gray {
+  background: #64748b;
+}
+
+.material {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 10px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.hidden {
+  display: none;
+}
+
+.status {
+  padding: 12px;
+  background: #eff6ff;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+@media(max-width:600px) {
+  .container {
+    padding: 12px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <h1>🔐 Admin Ruang Belajar</h1>
+    <p>Kelola materi pembelajaran</p>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- LOGIN -->
+  <section id="loginSection" class="card">
+
+    <h2>Login Admin</h2>
+
+    <label>Email</label>
+    <input id="email" type="email" placeholder="Email admin">
+
+    <label>Password</label>
+    <input id="password" type="password" placeholder="Password">
+
+    <button onclick="login()">
+      🔐 Login
+    </button>
+
+    <p id="loginStatus" style="margin-top:12px"></p>
+
+  </section>
+
+  <!-- ADMIN -->
+  <section id="adminSection" class="hidden">
+
+    <div class="card">
+
+      <h2>➕ Tambah / Edit Materi</h2>
+
+      <div class="status" id="status">
+        Siap.
+      </div>
+
+      <label>Kelas</label>
+      <select id="classLevel">
+        <option value="10">Kelas 10</option>
+        <option value="11">Kelas 11</option>
+        <option value="12">Kelas 12</option>
+      </select>
+
+      <label>Mata Pelajaran</label>
+      <select id="subject">
+        <option>Matematika</option>
+        <option>Geografi</option>
+        <option>Kimia</option>
+        <option>Biologi</option>
+        <option>Fisika</option>
+        <option>Bahasa Indonesia</option>
+        <option>Bahasa Inggris</option>
+        <option>Informatika</option>
+        <option>Ekonomi</option>
+        <option>Sosiologi</option>
+        <option>Sejarah</option>
+      </select>
+
+      <label>Bab</label>
+      <input
+        id="chapter"
+        placeholder="Contoh: Bab 1 - Peta">
+
+      <label>Judul Materi</label>
+      <input
+        id="title"
+        placeholder="Contoh: Pengertian Peta">
+
+      <label>Deskripsi / Rangkuman</label>
+      <textarea
+        id="description"
+        placeholder="Tulis ringkasan materi..."></textarea>
+
+      <label>File PDF</label>
+      <input
+        id="file"
+        type="file"
+        accept="application/pdf">
+
+      <button onclick="saveMaterial()">
+        💾 Simpan Materi
+      </button>
+
+      <button
+        class="gray"
+        onclick="cancelEdit()">
+        Batal
+      </button>
+
+    </div>
+
+    <div class="card">
+
+      <h2>📚 Daftar Materi</h2>
+
+      <input
+        id="searchAdmin"
+        placeholder="🔎 Cari materi..."
+        oninput="renderAdminMaterials()">
+
+      <div id="materials"></div>
+
+    </div>
+
+    <button class="danger" onclick="logout()">
+      🚪 Logout
+    </button>
+
+  </section>
+
+</main>
+
+<script>
+const SUPABASE_URL = "https://xchxamzaacedpozgvvyg.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_BojvjcIt2HPCNpeo8huhvA_jTLLl3bn";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+let editingId = null;
+let currentMaterials = [];
+
+async function login() {
+
+  const email =
+    document.getElementById("email").value.trim();
+
+  const password =
+    document.getElementById("password").value;
+
+  const { error } =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  if (error) {
+    document.getElementById("loginStatus").textContent =
+      "❌ " + error.message;
+    return;
+  }
+
+  await checkAdmin();
+}
+
+async function checkAdmin() {
+
+  const {
+    data: { user }
+  } = await supabaseClient.auth.getUser();
+
+  if (!user) {
+    showLogin();
+    return;
+  }
+
+  const { data, error } =
+    await supabaseClient
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+  if (error || !data) {
+
+    await supabaseClient.auth.signOut();
+
+    alert("Akun ini bukan admin.");
+
+    showLogin();
+
+    return;
+  }
+
+  document
+    .getElementById("loginSection")
+    .classList.add("hidden");
+
+  document
+    .getElementById("adminSection")
+    .classList.remove("hidden");
+
+  loadMaterials();
+}
+
+function showLogin() {
+  document
+    .getElementById("loginSection")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("adminSection")
+    .classList.add("hidden");
+}
+
+async function loadMaterials() {
+
+  const { data, error } =
+    await supabaseClient
+      .from("materials")
+      .select("*")
+      .order("created_at", {
+        ascending: false
+      });
+
+  if (error) {
+    setStatus("❌ Gagal mengambil data.");
+    return;
+  }
+
+  currentMaterials = data || [];
+
+  renderAdminMaterials();
+}
+
+function renderAdminMaterials() {
+
+  const search =
+    document.getElementById("searchAdmin")
+      .value
+      .toLowerCase();
+
+  const list =
+    currentMaterials.filter(m =>
+      m.title.toLowerCase().includes(search) ||
+      m.subject.toLowerCase().includes(search) ||
+      m.chapter.toLowerCase().includes(search)
+    );
+
+  const container =
+    document.getElementById("materials");
+
+  if (!list.length) {
+    container.innerHTML =
+      "<p>Belum ada materi.</p>";
+    return;
+  }
+
+  container.innerHTML = list.map(m => `
+    <div class="material">
+
+      <h3>📄 ${escapeHtml(m.title)}</h3>
+
+      <p>
+        Kelas ${escapeHtml(m.class_level)}
+        • ${escapeHtml(m.subject)}
+        • ${escapeHtml(m.chapter)}
+      </p>
+
+      <p style="margin-top:8px">
+        ${escapeHtml(m.description || "")}
+      </p>
+
+      <div class="actions">
+
+        <button
+          onclick="openFile('${m.file_url}')">
+          📖 Buka
+        </button>
+
+        <button
+          class="orange"
+          onclick="editMaterial(${m.id})">
+          ✏️ Edit
+        </button>
+
+        <button
+          class="danger"
+          onclick="deleteMaterial(${m.id})">
+          🗑️ Hapus
+        </button>
+
+      </div>
+
+    </div>
+  `).join("");
+}
+
+async function saveMaterial() {
+
+  const classLevel =
+    document.getElementById("classLevel").value;
+
+  const subject =
+    document.getElementById("subject").value;
+
+  const chapter =
+    document.getElementById("chapter").value.trim();
+
+  const title =
+    document.getElementById("title").value.trim();
+
+  const description =
+    document.getElementById("description").value.trim();
+
+  const file =
+    document.getElementById("file").files[0];
+
+  if (!chapter || !title) {
+    alert("Bab dan judul wajib diisi.");
+    return;
+  }
+
+  try {
+
+    let filePath = null;
+    let fileUrl = null;
+    let fileName = null;
+
+    /*
+      Jika sedang edit dan tidak memilih file baru,
+      file lama tetap digunakan.
+    */
+
+    if (file) {
+
+      if (file.type !== "application/pdf") {
+        alert("File harus PDF.");
+        return;
+      }
+
+      if (file.size > 20 * 1024 * 1024) {
+        alert("Ukuran PDF maksimal 20 MB.");
+        return;
+      }
+
+      setStatus("⏳ Mengupload PDF...");
+
+      const safeName =
+        file.name
+          .replace(/[^a-zA-Z0-9._-]/g, "_");
+
+      filePath =
+        Date.now() + "_" + safeName;
+
+      const { error: uploadError } =
+        await supabaseClient.storage
+          .from("materi")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false
+          });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } =
+        supabaseClient.storage
+          .from("materi")
+          .getPublicUrl(filePath);
+
+      fileUrl = data.publicUrl;
+      fileName = file.name;
+    }
+
+    const {
+      data: { user }
+    } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+      throw new Error("Session admin tidak ditemukan.");
+    }
+
+    if (editingId) {
+
+      const old =
+        currentMaterials.find(
+          m => Number(m.id) === Number(editingId)
+        );
+
+      const updateData = {
+        class_level: classLevel,
+        subject,
+        chapter,
+        title,
+        description,
+        updated_at: new Date().toISOString()
+      };
+
+      if (file) {
+        updateData.file_name = fileName;
+        updateData.file_path = filePath;
+        updateData.file_url = fileUrl;
+      }
+
+      const { error } =
+        await supabaseClient
+          .from("materials")
+          .update(updateData)
+          .eq("id", editingId);
+
+      if (error) throw error;
+
+      /*
+        Hapus PDF lama jika diganti.
+      */
+      if (
+        file &&
+        old &&
+        old.file_path
+      ) {
+        await supabaseClient.storage
+          .from("materi")
+          .remove([old.file_path]);
+      }
+
+      setStatus("✅ Materi berhasil diperbarui.");
+
+    } else {
+
+      const { error } =
+        await supabaseClient
+          .from("materials")
+          .insert({
+            class_level: classLevel,
+            subject,
+            chapter,
+            title,
+            description,
+            file_name: fileName,
+            file_path: filePath,
+            file_url: fileUrl,
+            created_by: user.id
+          });
+
+      if (error) throw error;
+
+      setStatus("✅ Materi berhasil ditambahkan.");
+    }
+
+    clearForm();
+    await loadMaterials();
+
+  } catch (error) {
+
+    console.error(error);
+
+    setStatus(
+      "❌ " + (error.message || "Terjadi kesalahan.")
+    );
+  }
+}
+
+function editMaterial(id) {
+
+  const material =
+    currentMaterials.find(
+      m => Number(m.id) === Number(id)
+    );
+
+  if (!material) return;
+
+  editingId = id;
+
+  document.getElementById("classLevel").value =
+    material.class_level;
+
+  document.getElementById("subject").value =
+    material.subject;
+
+  document.getElementById("chapter").value =
+    material.chapter;
+
+  document.getElementById("title").value =
+    material.title;
+
+  document.getElementById("description").value =
+    material.description || "";
+
+  document.getElementById("file").value = "";
+
+  setStatus(
+    "✏️ Sedang mengedit: " + material.title
+  );
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+async function deleteMaterial(id) {
+
+  const material =
+    currentMaterials.find(
+      m => Number(m.id) === Number(id)
+    );
+
+  if (!material) return;
+
+  const ok = confirm(
+    `Hapus materi "${material.title}"?`
+  );
+
+  if (!ok) return;
+
+  try {
+
+    if (material.file_path) {
+
+      await supabaseClient.storage
+        .from("materi")
+        .remove([material.file_path]);
+    }
+
+    const { error } =
+      await supabaseClient
+        .from("materials")
+        .delete()
+        .eq("id", id);
+
+    if (error) throw error;
+
+    setStatus("🗑️ Materi berhasil dihapus.");
+
+    await loadMaterials();
+
+  } catch (error) {
+
+    setStatus(
+      "❌ " + error.message
+    );
+  }
+}
+
+function cancelEdit() {
+  clearForm();
+  setStatus("Siap.");
+}
+
+function clearForm() {
+
+  editingId = null;
+
+  document.getElementById("chapter").value = "";
+  document.getElementById("title").value = "";
+  document.getElementById("description").value = "";
+  document.getElementById("file").value = "";
+}
+
+function openFile(url) {
+
+  if (url) {
+    window.open(url, "_blank");
+  } else {
+    alert("File tidak tersedia.");
+  }
+}
+
+function setStatus(message) {
+  document.getElementById("status").textContent =
+    message;
+}
+
+async function logout() {
+
+  await supabaseClient.auth.signOut();
+
+  showLogin();
+}
+
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+supabaseClient.auth.onAuthStateChange(
+  async () => {
+    await checkAdmin();
+  }
+);
+
+checkAdmin();
+</script>
+
+</body>
+</html>
